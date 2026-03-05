@@ -1,0 +1,23 @@
+{
+  "name": "spell-checker",
+  "version": "1.0.0",
+  "description": "CLI for checking a document or given folder of documents of plain text for typos",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/is386/spell-checker.git"
+  },
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "wordlist-english": "^1.2.1"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "^24.0.4",
+    "@types/node": "^25.3.3",
+    "typescript": "^5.9.3"
+  }
+}
