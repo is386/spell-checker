@@ -1,37 +1,22 @@
-// TODO: read in file from args
-// TODO: read in multiple files from args
-// TODO: read in stdin for piping
 // TODO: custom words
 // TODO: interactive mode
-// TODO: multi threading
 
 import wordlist from "wordlist-english";
-import * as fs from "node:fs";
+import { readFileSync } from "node:fs";
 import { contractions } from "./contractions.js";
+import { Command } from "commander";
 
-const englishWords = wordlist.english.concat(contractions);
+interface Typo {
+  lineNumber: number;
+  word: string;
+  context: string;
+}
 
-fs.readFile(
-  "example.txt",
-  "utf8",
-  (err: NodeJS.ErrnoException | null, data: string) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
+const typos: Typo[] = [];
+const englishWords = new Set(wordlist.english.concat(contractions));
 
-    const lines = data.split("\n");
-    let lineNumber = 0;
-
-    for (const line of lines) {
-      lineNumber++;
-      checkLine(line, lineNumber);
-    }
-  },
-);
-
-function checkLine(line: string, lineNumber: number): void {
-  line = cleanLine(line);
+function checkLine(originalLine: string, lineNumber: number): void {
+  const line = cleanLine(originalLine);
 
   if (!line) {
     return;
@@ -41,7 +26,7 @@ function checkLine(line: string, lineNumber: number): void {
 
   for (const word of words) {
     if (checkWord(word)) {
-      console.error(`Line ${lineNumber}: "${word}" appears to be a typo`);
+      typos.push({ lineNumber, word, context: originalLine });
     }
   }
 }
@@ -55,7 +40,7 @@ function cleanLine(line: string): string {
     .replaceAll("'s", "")
     .replaceAll("/", " ")
     .replaceAll("@", " ")
-    .replaceAll(/[^a-zA-Z' ]/g, "")
+    .replaceAll(/[^a-zA-Z' ]/g, " ")
     .trim();
 }
 
@@ -65,10 +50,54 @@ function checkWord(word: string): boolean {
   return (
     word !== "" &&
     isNaN(Number(word.toLowerCase())) &&
-    !englishWords.includes(word.toLowerCase())
+    !englishWords.has(word.toLowerCase())
   );
 }
 
 function cleanWord(word: string): string {
   return word.replaceAll(/^['']+|['']+$/g, "").trim();
 }
+
+function underline(s: string) {
+  return `\x1b[4:3m\x1b[31m${s}\x1b[0m`;
+}
+
+function printTypos(): void {
+  typos.forEach((typo) => {
+    console.log(
+      `\nLine ${typo.lineNumber}: ${typo.context.replace(typo.word, underline(typo.word))}`,
+    );
+  });
+}
+
+function main(): void {
+  const commander = new Command()
+    .argument("[file]", "file to spell-check (or pipe from stdin)")
+    .option("-i --interactive", "toggle interactive mode", false)
+    .parse();
+
+  const [file] = commander.args;
+  const opts = commander.opts<{ interactive: boolean }>();
+
+  if (!file && process.stdin.isTTY) {
+    commander.help();
+  }
+
+  const text = readFileSync(file || "/dev/stdin", "utf8");
+
+  const lines = text.split("\n");
+  let lineNumber = 0;
+
+  for (const line of lines) {
+    lineNumber++;
+    checkLine(line, lineNumber);
+  }
+
+  if (opts.interactive) {
+    return;
+  } else {
+    printTypos();
+  }
+}
+
+main();
