@@ -1,13 +1,15 @@
+// TODO: read in file from args
+// TODO: read in multiple files from args
+// TODO: read in stdin for piping
+// TODO: custom words
+// TODO: interactive mode
+// TODO: multi threading
+
 import wordlist from "wordlist-english";
 import * as fs from "node:fs";
 import { contractions } from "./contractions.js";
 
 const englishWords = wordlist.english.concat(contractions);
-
-// TODO: read in file from args
-// TODO: read in multiple files from args
-// TODO: read in stdin for piping
-// TODO: custom words
 
 fs.readFile(
   "example.txt",
