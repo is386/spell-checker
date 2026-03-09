@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { interactiveMode } from './interactive.js';
 import { formatTypo } from './utils.js';
-import { checkFile } from './spelling.js';
+import { checkFile, fixFile } from './spelling.js';
 import type { Typo } from './types.js';
 
 function printTypos(typos: Typo[]): void {
@@ -27,13 +27,17 @@ function parseArgs(): { file: string; interactive: boolean } {
 
 async function main(): Promise<void> {
   const { file, interactive } = parseArgs();
-  const typos = checkFile(file);
+  const { typos, lines } = checkFile(file);
 
   if (interactive) {
-    await interactiveMode(typos);
+    const fixedLinesMap = await interactiveMode(typos);
+    fixFile(file, lines, fixedLinesMap);
   } else {
     printTypos(typos);
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(err.message);
+  process.exit(1);
+});

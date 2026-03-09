@@ -10,8 +10,8 @@ and/or either—or neither
 the U.S.A. is a country
 42 is just a number
 5.00
-this wrd is a tpyo
-~hello` world! test@email #tag $money %percent
+this word is a tpyo
+this word is a typo
 ^caret &join *star ?question {curly} [bracket]
 >greater <less :colon ;semi \back |pipe
 +plus =equals _under
@@ -19,3 +19,4 @@ isn't today can't
 'isn't'
 9zebra9
 wrd-wrd
+word-word

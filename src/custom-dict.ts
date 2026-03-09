@@ -25,6 +25,6 @@ export function getCustomDictionary(): Set<string> {
 
 export function appendCustomDictionary(word: string): void {
   const dict = getCustomDictionary();
-  dict.add(word);
+  dict.add(word.toLowerCase());
   writeFileSync(customDictFile, JSON.stringify([...dict]));
 }
