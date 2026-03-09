@@ -29,6 +29,8 @@ async function main(): Promise<void> {
   const { file, interactive } = parseArgs();
   const { typos, lines } = checkFile(file);
 
+  if (!process.stdin.isTTY) process.stdin.destroy();
+
   if (interactive) {
     const fixedLinesMap = await interactiveMode(typos);
     fixFile(file, lines, fixedLinesMap);

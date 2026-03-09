@@ -140,6 +140,7 @@ export async function interactiveMode(typos: Typo[]): Promise<Record<number, str
         break;
     }
   }
-  inputStream.pause();
+  inputStream.setRawMode(false);
+  inputStream.destroy();
   return fixedLinesMap;
 }
