@@ -77,5 +77,7 @@ export function fixFile(file: string, lines: string[], fixedLineMap: Record<numb
   for (const [i, fixedLine] of Object.entries(fixedLineMap)) {
     lines[Number(i) - 1] = fixedLine;
   }
-  writeFileSync(file || '/dev/stdout', lines.join('\n'));
+  const output = file || '/dev/stdout';
+  writeFileSync(output, lines.join('\n'));
+  if (file) console.log(`\n${file} saved`);
 }
