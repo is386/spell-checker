@@ -4,3 +4,8 @@ export interface Typo {
   context: string;
   occurrence: number;
 }
+
+export interface CheckResult {
+  typos: Typo[];
+  lines: string[];
+}

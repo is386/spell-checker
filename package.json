@@ -7,7 +7,7 @@
     "url": "git+https://github.com/is386/spell-checker.git"
   },
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
