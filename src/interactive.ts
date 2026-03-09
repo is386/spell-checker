@@ -2,6 +2,7 @@ import { emitKeypressEvents } from 'node:readline';
 import { formatTypo } from './utils.js';
 
 import { Typo } from './types.js';
+import { appendCustomDictionary, getCustomDictionary } from './custom-dict.js';
 
 const OPTIONS = ['Fix', 'Add to Dictionary', 'Skip'] as const;
 type Option = (typeof OPTIONS)[number];
@@ -12,7 +13,8 @@ function renderOptions(selected: number, initial: boolean): void {
   }
   for (let i = 0; i < OPTIONS.length; i++) {
     const prefix = i === selected ? '\x1b[32m> ' : '  ';
-    const text = i === selected ? `\x1b[1m${OPTIONS[i]}\x1b[0m` : OPTIONS[i];
+    const text =
+      i === selected ? `\x1b[1m${i + 1}. ${OPTIONS[i]}\x1b[0m` : `${i + 1}. ${OPTIONS[i]}`;
     process.stdout.write(`\x1b[2K${prefix}${text}\n`);
   }
 }
@@ -38,6 +40,12 @@ function onKeypress(
     } else if (key.name === 'return') {
       if (process.stdin.isTTY) process.stdin.setRawMode(false);
       resolve(OPTIONS[current]);
+    } else if (_ >= '1' && _ <= String(OPTIONS.length)) {
+      const index = Number(_) - 1;
+      current = index;
+      renderOptions(current, false);
+      if (process.stdin.isTTY) process.stdin.setRawMode(false);
+      resolve(OPTIONS[current]);
     }
   };
 }
@@ -60,6 +68,10 @@ function promptOption(): Promise<Option> {
 
 export async function interactiveMode(typos: Typo[]): Promise<void> {
   for (const typo of typos) {
+    if (getCustomDictionary().has(typo.word)) {
+      continue;
+    }
+
     console.log(formatTypo(typo));
     const choice = await promptOption();
 
@@ -67,6 +79,7 @@ export async function interactiveMode(typos: Typo[]): Promise<void> {
       case 'Fix':
         break;
       case 'Add to Dictionary':
+        appendCustomDictionary(typo.word);
         break;
       default:
         break;

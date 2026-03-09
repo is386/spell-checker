@@ -1,4 +1,4 @@
-export const contractions = [
+export const contractions = new Set([
   "aren't",
   "can't",
   "couldn't",
@@ -52,4 +52,4 @@ export const contractions = [
   "ma'am",
   "o'clock",
   "y'all",
-];
+]);
