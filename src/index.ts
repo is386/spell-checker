@@ -1,10 +1,12 @@
-// TODO: custom words
 // TODO: interactive mode
 
 import wordlist from "wordlist-english";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { contractions } from "./contractions.js";
 import { Command } from "commander";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { exit } from "node:process";
 
 interface Typo {
   lineNumber: number;
@@ -13,7 +15,18 @@ interface Typo {
 }
 
 const typos: Typo[] = [];
-const englishWords = new Set(wordlist.english.concat(contractions));
+let dictionary = new Set(wordlist.english.concat(contractions));
+
+function checkFile(file: string): void {
+  const text = readFileSync(file || "/dev/stdin", "utf8");
+  const lines = text.split("\n");
+  let lineNumber = 0;
+
+  for (const line of lines) {
+    lineNumber++;
+    checkLine(line, lineNumber);
+  }
+}
 
 function checkLine(originalLine: string, lineNumber: number): void {
   const line = cleanLine(originalLine);
@@ -50,7 +63,7 @@ function checkWord(word: string): boolean {
   return (
     word !== "" &&
     isNaN(Number(word.toLowerCase())) &&
-    !englishWords.has(word.toLowerCase())
+    !dictionary.has(word.toLowerCase())
   );
 }
 
@@ -70,7 +83,20 @@ function printTypos(): void {
   });
 }
 
-function main(): void {
+function loadCustomDictionary(): void {
+  const dir = dirname(fileURLToPath(import.meta.url));
+  const customDictFile = `${dir}/custom-dictionary.json`;
+
+  if (!existsSync(customDictFile)) {
+    writeFileSync(customDictFile, "[]");
+  }
+
+  dictionary = dictionary.union(
+    new Set(JSON.parse(readFileSync(customDictFile, "utf8"))),
+  );
+}
+
+function parseArgs(): { file: string; interactive: boolean } {
   const commander = new Command()
     .argument("[file]", "file to spell-check (or pipe from stdin)")
     .option("-i --interactive", "toggle interactive mode", false)
@@ -78,22 +104,20 @@ function main(): void {
 
   const [file] = commander.args;
   const opts = commander.opts<{ interactive: boolean }>();
-
   if (!file && process.stdin.isTTY) {
     commander.help();
+    exit(0);
   }
 
-  const text = readFileSync(file || "/dev/stdin", "utf8");
+  return { file, interactive: opts.interactive };
+}
 
-  const lines = text.split("\n");
-  let lineNumber = 0;
+function main(): void {
+  const { file, interactive } = parseArgs();
+  loadCustomDictionary();
+  checkFile(file);
 
-  for (const line of lines) {
-    lineNumber++;
-    checkLine(line, lineNumber);
-  }
-
-  if (opts.interactive) {
+  if (interactive) {
     return;
   } else {
     printTypos();
