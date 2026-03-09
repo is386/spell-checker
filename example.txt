@@ -10,7 +10,7 @@ and/or either—or neither
 the U.S.A. is a country
 42 is just a number
 5.00
-this word is a tpyo
+this word is a typo
 this word is a typo
 ^caret &join *star ?question {curly} [bracket]
 >greater <less :colon ;semi \back |pipe

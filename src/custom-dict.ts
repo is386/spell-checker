@@ -1,13 +1,14 @@
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 
-const dir = dirname(fileURLToPath(import.meta.url));
-const customDictFile = `${dir}/custom-dictionary.json`;
+const configDir = join(homedir(), '.config', 'spellchecker');
+const customDictFile = join(configDir, 'custom-dictionary.json');
 let customDict: Set<string> | null = null;
 
 function loadCustomDictionary(): Set<string> {
   if (!existsSync(customDictFile)) {
+    mkdirSync(configDir, { recursive: true });
     writeFileSync(customDictFile, '[]');
     return new Set();
   }
