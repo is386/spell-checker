@@ -6,42 +6,54 @@ import { contractions } from "./contractions.js";
 import { Command } from "commander";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { exit } from "node:process";
 
 interface Typo {
   lineNumber: number;
   word: string;
   context: string;
+  occurrence: number;
 }
 
-const typos: Typo[] = [];
-let dictionary = new Set(wordlist.english.concat(contractions));
+const dictionary = new Set(
+  wordlist.english.concat(contractions).concat(loadCustomDictionary()),
+);
 
-function checkFile(file: string): void {
+function checkFile(file: string): Typo[] {
   const text = readFileSync(file || "/dev/stdin", "utf8");
+  let typos: Typo[] = [];
   const lines = text.split("\n");
   let lineNumber = 0;
 
   for (const line of lines) {
     lineNumber++;
-    checkLine(line, lineNumber);
+    typos = typos.concat(checkLine(line, lineNumber));
   }
+  return typos;
 }
 
-function checkLine(originalLine: string, lineNumber: number): void {
+function checkLine(originalLine: string, lineNumber: number): Typo[] {
+  const typos: Typo[] = [];
   const line = cleanLine(originalLine);
 
   if (!line) {
-    return;
+    return [];
   }
 
   const words = line.split(/\s+/);
+  const occurrences: Record<string, number> = {};
 
   for (const word of words) {
     if (checkWord(word)) {
-      typos.push({ lineNumber, word, context: originalLine });
+      occurrences[word] = (occurrences[word] ?? 0) + 1;
+      typos.push({
+        lineNumber,
+        word,
+        context: originalLine,
+        occurrence: occurrences[word],
+      });
     }
   }
+  return typos;
 }
 
 function cleanLine(line: string): string {
@@ -53,7 +65,7 @@ function cleanLine(line: string): string {
     .replaceAll("'s", "")
     .replaceAll("/", " ")
     .replaceAll("@", " ")
-    .replaceAll(/[^a-zA-Z' ]/g, " ")
+    .replaceAll(/[^a-zA-Z0-9' ]/g, " ")
     .trim();
 }
 
@@ -71,19 +83,35 @@ function cleanWord(word: string): string {
   return word.replaceAll(/^['']+|['']+$/g, "").trim();
 }
 
-function underline(s: string) {
+function underline(s: string): string {
   return `\x1b[4:3m\x1b[31m${s}\x1b[0m`;
 }
 
-function printTypos(): void {
+function replaceNth(
+  str: string,
+  search: string,
+  replacement: string,
+  n: number,
+): string {
+  let count = 0;
+  return str.replace(
+    new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+    (match) => {
+      count++;
+      return count === n ? replacement : match;
+    },
+  );
+}
+
+function printTypos(typos: Typo[]): void {
   typos.forEach((typo) => {
     console.log(
-      `\nLine ${typo.lineNumber}: ${typo.context.replace(typo.word, underline(typo.word))}`,
+      `\nLine ${typo.lineNumber}: ${replaceNth(typo.context, typo.word, underline(typo.word), typo.occurrence)}`,
     );
   });
 }
 
-function loadCustomDictionary(): void {
+function loadCustomDictionary(): string[] {
   const dir = dirname(fileURLToPath(import.meta.url));
   const customDictFile = `${dir}/custom-dictionary.json`;
 
@@ -91,22 +119,19 @@ function loadCustomDictionary(): void {
     writeFileSync(customDictFile, "[]");
   }
 
-  dictionary = dictionary.union(
-    new Set(JSON.parse(readFileSync(customDictFile, "utf8"))),
-  );
+  return JSON.parse(readFileSync(customDictFile, "utf8"));
 }
 
 function parseArgs(): { file: string; interactive: boolean } {
   const commander = new Command()
     .argument("[file]", "file to spell-check (or pipe from stdin)")
-    .option("-i --interactive", "toggle interactive mode", false)
+    .option("-i, --interactive", "toggle interactive mode", false)
     .parse();
 
   const [file] = commander.args;
   const opts = commander.opts<{ interactive: boolean }>();
   if (!file && process.stdin.isTTY) {
     commander.help();
-    exit(0);
   }
 
   return { file, interactive: opts.interactive };
@@ -114,13 +139,12 @@ function parseArgs(): { file: string; interactive: boolean } {
 
 function main(): void {
   const { file, interactive } = parseArgs();
-  loadCustomDictionary();
-  checkFile(file);
+  const typos = checkFile(file);
 
   if (interactive) {
     return;
   } else {
-    printTypos();
+    printTypos(typos);
   }
 }
 
