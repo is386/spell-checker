@@ -1,10 +1,10 @@
 import type { Typo } from './types.js';
 import { readFileSync } from 'node:fs';
 import wordlist from 'wordlist-english';
-import { loadCustomDictionary } from './custom-dict.js';
+import { getCustomDictionary } from './custom-dict.js';
 import { contractions } from './contractions.js';
 
-const dictionary = new Set(wordlist.english.concat(contractions).concat(loadCustomDictionary()));
+const dictionary = new Set(wordlist.english).union(contractions).union(getCustomDictionary());
 
 function checkLine(originalLine: string, lineNumber: number): Typo[] {
   const typos: Typo[] = [];
