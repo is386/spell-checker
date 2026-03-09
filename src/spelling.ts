@@ -1,5 +1,5 @@
-import type { Typo } from './types.js';
-import { readFileSync } from 'node:fs';
+import type { CheckResult, Typo } from './types.js';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import wordlist from 'wordlist-english';
 import { getCustomDictionary } from './custom-dict.js';
 import { contractions } from './contractions.js';
@@ -38,7 +38,7 @@ function cleanLine(line: string): string {
     .replaceAll('—', ' ')
     .replaceAll('–', ' ')
     .replaceAll("'s", '')
-    .replaceAll("'s", '')
+    .replaceAll('\u2019s', '')
     .replaceAll('/', ' ')
     .replaceAll('@', ' ')
     .replaceAll(/[^a-zA-Z0-9' ]/g, ' ')
@@ -55,15 +55,27 @@ function cleanWord(word: string): string {
   return word.replaceAll(/^['']+|['']+$/g, '').trim();
 }
 
-export function checkFile(file: string): Typo[] {
+export function checkFile(file: string): CheckResult {
+  if (file && !existsSync(file)) {
+    console.error(`Error: file not found: ${file}`);
+    process.exit(1);
+  }
   const text = readFileSync(file || '/dev/stdin', 'utf8');
   let typos: Typo[] = [];
-  const lines = text.split('\n');
+  const lines = text.split(/\r?\n/);
   let lineNumber = 0;
 
   for (const line of lines) {
     lineNumber++;
     typos = typos.concat(checkLine(line, lineNumber));
   }
-  return typos;
+  return { typos, lines };
+}
+
+export function fixFile(file: string, lines: string[], fixedLineMap: Record<number, string>) {
+  if (Object.keys(fixedLineMap).length === 0) return;
+  for (const [i, fixedLine] of Object.entries(fixedLineMap)) {
+    lines[Number(i) - 1] = fixedLine;
+  }
+  writeFileSync(file || '/dev/stdout', lines.join('\n'));
 }
