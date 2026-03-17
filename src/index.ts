@@ -13,7 +13,7 @@ function printTypos(typos: Typo[]): void {
 function parseArgs(): { file: string; interactive: boolean } {
   const commander = new Command()
     .argument('[file]', 'file to spell-check (or pipe from stdin)')
-    .option('-i, --interactive', 'toggle interactive mode', false)
+    .option('-i, --interactive', 'toggle interactive mode.', false)
     .parse();
 
   const [file] = commander.args;
