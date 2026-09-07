@@ -4,7 +4,7 @@
   "description": "CLI for checking a document or given folder of documents of plain text for typos",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/is386/spell-checker.git"
+    "url": "git+https://github.com/1nderr/spell-checker.git"
   },
   "type": "module",
   "main": "dist/index.js",
